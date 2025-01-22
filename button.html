@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Content</title>
+    <style>
+        details {
+            font-family: Arial, sans-serif;
+            margin: 10px 0;
+        }
+    </style>
+    <style>
+        #content {
+            display: none;
+            font-family: Arial, sans-serif;
+            margin: 10px 0;
+        }
+        button {
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>網頁內容</h1>
+    <details>
+        <summary>點擊展開或收起內容</summary>
+        <p>這是可以展開和收起的部分內容！</p>
+        <p>你可以加入更多段落或是圖片。</p>
+    </details>
+
+    <button id="toggleButton">展開內容</button>
+    <div id="content">
+        <p>這是可以展開和收起的部分內容！</p>
+        <p>你可以加入更多段落或是圖片。</p>
+    </div>
+
+    <script>
+        const button = document.getElementById('toggleButton');
+        const content = document.getElementById('content');
+
+        // 顯式設置初始狀態，避免因默認值影響行為
+        content.style.display = 'none';
+
+        button.addEventListener('click', () => {
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                button.textContent = '收起內容';
+            } else {
+                content.style.display = 'none';
+                button.textContent = '展開內容';
+            }
+        });
+    </script>
+</body>
+</html>

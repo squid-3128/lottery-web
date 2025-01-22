@@ -1,0 +1,123 @@
+draw 資料庫select
+1.抽獎時可以對應到抽到的參與者資料與獎項資料 1
+2.搜尋使用者的資料(name, phone, email) 1
+3.搜尋抽獎結果
+4.從獎項(透過抽獎表格)搜尋參與者資料(僅顯示status成功者)
+5.搜尋所有獎項內容
+6.搜尋獎項內容(僅顯示名稱與獎第)
+
+draw 資料庫insert
+1.新增參與者 1
+2.新增獎項
+3.新增中獎資訊
+4.新增身分組
+
+draw 資料庫delete
+1.刪除參與者 1
+2.刪除獎項
+3.刪除中獎資訊
+4.刪除身分組
+
+draw 資料庫update
+1.更改參與者 1
+2.更改獎項
+3.更改中獎資訊
+4.更改身分組 
+
+--------------------------------------------------
+程式碼
+--------------------------------------------------
+
+搜尋
+
+/* # 1. 抽獎時可以對應到抽到的參與者資料與獎項資料(用獎第排列)
+select P.name, P.phone_number, P.email, prize.prize_name, prize.prize_level
+from draw.participants as P inner join 
+	draw.draw as d inner join 
+	draw.prize as prize
+where d.participants_id = P.id and d.prize_id = prize.prize_id
+order by prize.prize_level ASC
+*/
+
+/* 2. 搜尋使用者的資料(name, phone, email)
+select participants.name as NAME, 
+	participants.phone_number as PHONE, 
+	participants.email as EMAIL
+from draw.participants
+*/
+
+/* 3. 搜尋抽獎結果
+select * from draw.draw
+*/
+
+/* # 4.從獎項(透過抽獎表格)搜尋參與者資料(僅顯示status成功者)
+select P.name, P.phone_number, P.email
+from draw.draw as d inner join
+	draw.participants as P inner join
+    	draw.prize as prize
+where d.prize_id = prize.prize_id and 
+	prize.prize_name = ''  and 
+	d.draw_status = 1
+*/
+
+/* 5. 搜尋所有獎項內容
+select prize_name from draw.prize
+*/
+
+/* # 6.搜尋獎項內容(僅顯示名稱與獎第)
+select prize_level, prize_name
+from draw.prize
+order by prize_level ASC
+*/
+
+--------------------------------------------
+新增
+
+/*# 1.新增參與者
+insert into draw.participants (name, email, phone_number) values (?, ?, ?)
+*/
+
+/* #2.新增獎項
+insert into draw.prize (prize_name, prize_description, prize_level) values (?, ?, ?)
+*/
+
+-------------------------------------------
+刪除
+
+/* # 1.刪除參與者
+delete from draw.participants
+where name = '?' 
+*/
+
+/* # 2.刪除獎項
+delete from draw.prize
+where prize_name = '?' 
+*/
+
+/* # 3.刪除中獎資訊
+delete from draw.draw
+where id =  ?
+*/
+
+------------------------------------------
+更改
+
+/* # 1.更改參與者
+update from draw.participants
+set name = '?', phone_number = '?', email = '?'
+where id = ? 
+*/
+
+/* # 2.更改獎項
+update from draw.prize
+set prize_name = '?', prize_description = '?', prize_level = '?'
+where id = ?
+*/
+
+/* # 3.更改中獎資訊
+update from draw.draw
+set draw_time = ?, participants_id = ?, draw_status = ?
+where id = ? 
+*/
+
+
