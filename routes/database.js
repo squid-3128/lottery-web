@@ -1,9 +1,14 @@
 const express = require('express');
 const mysql = require('mysql2');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
-//之後需要移除
+// Set up rate limiter: maximum of 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -449,7 +454,7 @@ router.delete('/delactivitie', (req, res) => {
 
 
 //簡易抽獎
-router.get('/random-winner', (req, res) => {
+router.get('/random-winner', limiter, (req, res) => {
   const quantity = parseInt(req.query.quantity, 10) || 1;
   const query = `SELECT * FROM draw.participants ORDER BY RAND() LIMIT ${quantity};`;
   db.query(query, (err, results) => {
