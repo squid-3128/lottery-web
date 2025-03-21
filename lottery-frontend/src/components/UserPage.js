@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 function UserPage() {
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone_number: '', // 修改為 phone_number
   });
 
   const handleChange = (e) => {
@@ -14,20 +15,44 @@ function UserPage() {
       ...formData,
       [name]: value,
     });
-  };
+  };  
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const phonePattern = /^[0-9]{10}$/;
-
-    if (!phonePattern.test(formData.phone)) {
+  
+    if (!phonePattern.test(formData.phone_number)) {
       alert('請輸入有效的手機號碼（10位數字）。');
       return;
     }
 
-    // 模擬表單提交
-    alert('表單提交成功！');
-    console.log('提交的數據：', formData);
+    if (localStorage.getItem('hasSubmitted')) {
+      alert('您已經提交過表單，無法再次參加。');
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:3001/database/addparticipants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (response.ok) {
+        const result = await response.json();
+        alert('表單提交成功！');
+        console.log('提交的數據：', result);
+        localStorage.setItem('hasSubmitted', 'true'); // 標記為已提交
+      } else {
+        alert('提交失敗，請稍後再試。');
+        console.error('提交失敗：', response.statusText);
+      }
+    } catch (error) {
+      alert('提交過程中發生錯誤，請稍後再試。');
+      console.error('錯誤信息：', error);
+    }
   };
 
   return (
@@ -67,8 +92,8 @@ function UserPage() {
           style={styles.input}
           type="text"
           id="phone"
-          name="phone"
-          value={formData.phone}
+          name="phone_number" // 修改為 phone_number
+          value={formData.phone_number}
           onChange={handleChange}
           required
         />

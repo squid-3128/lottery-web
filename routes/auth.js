@@ -10,17 +10,23 @@ if (!SECRET_KEY) {
 }
 
 // 管理端驗證中間件
-const authenticateAdmin = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (!token) return res.status(403).json({ message: 'No token provided' });
+function authenticateAdmin(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1]; // 從 Authorization 標頭中提取 Bearer Token
+  if (!token) {
+    return res.status(401).json({ message: 'Access denied. No token provided.' });
+  }
 
-  jwt.verify(token, SECRET_KEY, (err, decoded) => {
-    if (err || decoded.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied' });
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Not an admin.' });
     }
+    req.user = decoded; // 將解碼後的資訊附加到請求物件
     next();
-  });
-};
+  } catch (err) {
+    res.status(400).json({ message: 'Invalid token.' });
+  }
+}
 
 router.get('/user/data', (req, res) => {
   res.json({ message: 'Public user data', data: { someUserInfo: 'value' } });

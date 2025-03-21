@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2');
+const ExcelJS = require('exceljs'); // 引入 exceljs
 
 const router = express.Router();
 
@@ -237,15 +238,15 @@ router.get('/allprizes', (req, res) => {
 
 // 新增獎項
 router.post('/addprizes', (req, res) => {
-  const { name, description, level } = req.body;
+  const { name, description, level, quantity } = req.body;
 
-  if (!name || !description || !level) {
+  if (!name || !description || !level || !quantity) {
     return res.status(400).send('所有欄位都是必填的');
   }
 
-  const query = 'INSERT INTO draw.prize (prize_name, prize_description, prize_level) VALUES (?, ?, ?)';
+  const query = 'INSERT INTO draw.prize (prize_name, prize_description, prize_level, quantity) VALUES (?, ?, ?, ?)';
 
-  db.query(query, [name, description, level], (err, result) => {
+  db.query(query, [name, description, level, quantity], (err, result) => {
     if (err) {
       console.error('Error adding prize:', err);
       return res.status(500).send('新增失敗');
@@ -256,24 +257,52 @@ router.post('/addprizes', (req, res) => {
 
 // 更新獎項
 router.put('/updateprizes', (req, res) => {
-  const { id, name, description, level } = req.body;
+  const { id, name, description, level, quantity } = req.body;
 
-  if (!id || !name || !description || !level) {
+  if (!id || !name || !description || !level || !quantity) {
     return res.status(400).send('所有欄位都是必填的');
   }
 
   const query = `
     UPDATE draw.prize 
-    SET prize_name = ?, prize_description = ?, prize_level = ?
+    SET prize_name = ?, prize_description = ?, prize_level = ?, quantity = ?
     WHERE prize_id = ?
   `;
 
-  db.query(query, [name, description, level, id], (err, result) => {
+  db.query(query, [name, description, level, quantity, id], (err, result) => {
     if (err) {
       console.error('Error updating prize:', err);
       return res.status(500).send('更新失敗');
     }
     res.send('獎項更新成功');
+  });
+});
+
+// 更新獎品數量
+router.put('/update-prize-quantity', (req, res) => {
+  const { prize_id, quantity } = req.body;
+
+  if (!prize_id || quantity === undefined) {
+    return res.status(400).send('Prize ID 和數量是必填的');
+  }
+
+  const query = `
+    UPDATE draw.prize
+    SET quantity = quantity - ?
+    WHERE prize_id = ? AND quantity >= ?;
+  `;
+
+  db.query(query, [quantity, prize_id, quantity], (err, result) => {
+    if (err) {
+      console.error('Error updating prize quantity:', err);
+      return res.status(500).send('更新獎品數量失敗');
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).send('獎品數量不足或獎品不存在');
+    }
+
+    res.send('獎品數量更新成功');
   });
 });
 
@@ -339,6 +368,53 @@ router.post('/record-draw', (req, res) => {
     }
     res.json({ insertId: result.insertId });
   });
+});
+
+// 匯出中獎資訊為 Excel
+router.get('/export-draw', async (req, res) => {
+  try {
+    const query = 'SELECT * FROM draw';
+    db.query(query, async (err, results) => {
+      if (err) {
+        console.error('Error fetching draw data:', err);
+        return res.status(500).send('Error fetching draw data');
+      }
+
+      // 創建 Excel 工作簿和工作表
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Draw Results');
+
+      // 添加表頭
+      worksheet.columns = [
+        { header: 'ID', key: 'id', width: 10 },
+        { header: 'Draw Time', key: 'draw_time', width: 20 },
+        { header: 'Participant ID', key: 'participants_id', width: 15 },
+        { header: 'Prize ID', key: 'prize_id', width: 15 },
+      ];
+
+      // 添加數據
+      results.forEach((row) => {
+        worksheet.addRow(row);
+      });
+
+      // 設置回應頭，讓瀏覽器下載檔案
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=draw_results.xlsx'
+      );
+
+      // 將 Excel 檔案寫入回應
+      await workbook.xlsx.write(res);
+      res.end();
+    });
+  } catch (error) {
+    console.error('Error exporting draw data:', error);
+    res.status(500).send('Error exporting draw data');
+  }
 });
 
 //檢視活動

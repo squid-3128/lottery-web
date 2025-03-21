@@ -6,9 +6,15 @@ function PrizesSection() {
   const [prizes, setPrizes] = useState([]);
   const [prizeName, setPrizeName] = useState('');
   const [prizeDescription, setPrizeDescription] = useState('');
+  const [prizeQuantity, setPrizeQuantity] = useState(''); // 新增數量欄位
   const [prizeLevel, setPrizeLevel] = useState('');
   const [editId, setEditId] = useState(null);
-  const [editedData, setEditedData] = useState({});
+  const [editedData, setEditedData] = useState({
+    prize_name: '',
+    prize_description: '',
+    prize_level: '',
+    prize_quantity: '', // 新增數量欄位
+  });
 
   // 獲取所有獎項
   useEffect(() => {
@@ -23,13 +29,18 @@ function PrizesSection() {
 
   // 新增獎項
   const addPrize = async () => {
-    if (!prizeName || !prizeDescription || !prizeLevel) {
+    if (!prizeName || !prizeDescription || !prizeLevel || !prizeQuantity) {
       alert('請填寫所有欄位！');
       return;
     }
-
-    const newPrize = { name: prizeName, description: prizeDescription, level: prizeLevel };
-
+  
+    const newPrize = {
+      name: prizeName,
+      description: prizeDescription,
+      level: prizeLevel,
+      quantity: prizeQuantity, // 新增數量
+    };
+  
     try {
       const response = await axios.post('http://localhost:3001/database/addprizes', newPrize);
       if (response.data.insertId) {
@@ -38,6 +49,7 @@ function PrizesSection() {
         setPrizeName('');
         setPrizeDescription('');
         setPrizeLevel('');
+        setPrizeQuantity(''); // 清空數量欄位
       } else {
         alert('新增失敗，請稍後再試。');
       }
@@ -65,7 +77,8 @@ function PrizesSection() {
         id,
         name: editedData.prize_name,
         description: editedData.prize_description,
-        level: editedData.prize_level
+        level: editedData.prize_level,
+        quantity: editedData.prize_quantity, // 新增數量
       });
       alert('獎項更新成功！');
       setEditId(null);
@@ -110,6 +123,13 @@ function PrizesSection() {
           className={styles.input}
         />
         <input
+          type="number"
+          placeholder="獎項數量"
+          value={prizeQuantity}
+          onChange={(e) => setPrizeQuantity(e.target.value)}
+          className={styles.input}
+        />
+        <input
           type="text"
           placeholder="獎項等級"
           value={prizeLevel}
@@ -126,6 +146,7 @@ function PrizesSection() {
             <th className={styles.th}>ID</th>
             <th className={styles.th}>名稱</th>
             <th className={styles.th}>描述</th>
+            <th className={styles.th}>數量</th> 
             <th className={styles.th}>等級</th>
             <th className={styles.th}>操作</th>
           </tr>
@@ -160,6 +181,20 @@ function PrizesSection() {
                   />
                 ) : (
                   prize.prize_description
+                )}
+              </td>
+
+              {/* 數量欄位 */}
+              <td className={styles.td}>
+                {editId === prize.prize_id ? (
+                  <input
+                    type="number"
+                    value={editedData.quantity}
+                    onChange={(e) => handleInputChange(e, 'prize_quantity')}
+                    className={styles.input}
+                  />
+                ) : (
+                  prize.quantity
                 )}
               </td>
 

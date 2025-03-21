@@ -32,10 +32,11 @@ function DrawSection() {
       const response = await axios.get(`http://localhost:3001/database/random-winner?quantity=${drawQuantity}`);
       const winners = response.data;
       setWinnerInfo(winners);
-
+  
       // 修正 draw_time 的格式
       const drawTime = new Date().toISOString().slice(0, 19).replace("T", " ");
-
+  
+      // 記錄中獎資訊
       for (const winner of winners) {
         await axios.post("http://localhost:3001/database/record-draw", {
           draw_time: drawTime,
@@ -43,11 +44,30 @@ function DrawSection() {
           prize_id: selectedPrize,
         });
       }
+  
+      // 更新獎品數量
+      await axios.put("http://localhost:3001/database/update-prize-quantity", {
+        prize_id: selectedPrize,
+        quantity: drawQuantity,
+      });
+  
+      // 更新前端的獎品數量
+      setPrizes((prevPrizes) =>
+        prevPrizes.map((prize) =>
+          prize.prize_id === selectedPrize
+            ? { ...prize, quantity: prize.quantity - drawQuantity }
+            : prize
+        )
+      );
     } catch (error) {
-      console.error("Error fetching winners:", error);
+      console.error("Error during draw:", error);
     }
   };
 
+  const exportDrawData = () => {
+    window.open('http://localhost:3001/database/export-draw', '_blank');
+  };
+  
   return (
     <div style={containerStyle}>
       <div style={fixedSectionStyle}>
@@ -103,6 +123,9 @@ function DrawSection() {
           </div>
         </div>
       )}
+  
+      {/* 匯出按鈕 */}
+      <button style={buttonStyle} onClick={exportDrawData}>📤 匯出中獎資訊</button>
     </div>
   );
 }
@@ -113,7 +136,7 @@ const containerStyle = {
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  height: '80vh',
+  height: '50vh',
   textAlign: 'center',
   backgroundColor: '#f0f8ff',
   padding: '20px',
@@ -137,6 +160,7 @@ const selectStyle = {
 
 const inputStyle = {
   padding: '10px',
+  margin: '0 10px',
   fontSize: '18px',
   marginBottom: '20px',
   borderRadius: '8px',
@@ -146,6 +170,7 @@ const inputStyle = {
 
 const buttonStyle = {
   padding: '12px 24px',
+  margin: '20px',
   fontSize: '20px',
   color: '#fff',
   backgroundColor: '#007bff',
@@ -175,7 +200,7 @@ const titleStyle = {
 
 const fixedSectionStyle = {
   position: 'relative', // 設置為相對定位，讓子元素的絕對定位以此為基準
-  marginTop: '30px',
+  marginTop: '5px', // 縮小與 Header 的距離
   backgroundColor: '#f0f8ff',
   padding: '20px',
   borderRadius: '10px',
@@ -213,7 +238,7 @@ const winnerItemStyle = {
 
 const resultContainerStyle = {
   position: 'absolute', // 設置為絕對定位
-  top: '65%', // 放置在父容器的正下方
+  top: '50%', // 放置在父容器的正下方
   left: '50%',
   transform: 'translateX(-50%)', // 水平居中
   marginTop: '10px', // 與抽獎按鈕保持距離
