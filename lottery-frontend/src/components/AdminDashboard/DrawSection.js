@@ -50,47 +50,58 @@ function DrawSection() {
 
   return (
     <div style={containerStyle}>
-      <h2 style={headerStyle}>🎁 抽獎活動</h2>
-      <select
-        style={selectStyle}
-        value={selectedPrize}
-        onChange={(e) => {
-          setSelectedPrize(e.target.value);
-          const selected = prizes.find(prize => prize.prize_id === e.target.value);
-          setDrawQuantity(1); // 重置抽獎數量為 1
-        }}
-      >
-        {prizes.map((prize) => (
-          <option key={prize.prize_id} value={prize.prize_id}>
-            {prize.prize_name}
-          </option>
-        ))}
-      </select>
-      <input
-        type="number"
-        style={inputStyle}
-        value={drawQuantity}
-        min="1"
-        max={prizes.find(prize => prize.prize_id === selectedPrize)?.quantity || 1}
-        onChange={(e) => setDrawQuantity(e.target.value)}
-      />
-      <button style={buttonStyle} onClick={drawWinner}>🎲 抽取中獎者</button>
-
-      {winnerInfo.length > 0 && (
-      <div>
-        <h3 style={titleStyle}>🏆 恭喜中獎！</h3>
-        {winnerInfo.map((winner, index) => (
-          <motion.p
-            key={index}
-            style={infoStyle}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            {winner.name}
-          </motion.p>
-        ))}
+      <div style={fixedSectionStyle}>
+        <h2 style={headerStyle}>🎁 抽獎活動</h2>
+        <select
+          style={selectStyle}
+          value={selectedPrize}
+          onChange={(e) => {
+            setSelectedPrize(Number(e.target.value)); // 確保 selectedPrize 是數字
+            setDrawQuantity(1); // 重置抽獎數量為 1
+          }}
+        >
+          {prizes.map((prize) => (
+            <option key={prize.prize_id} value={prize.prize_id}>
+              {prize.prize_name} (剩餘數量: {prize.quantity})
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          style={inputStyle}
+          value={drawQuantity}
+          min="1"
+          max={Math.min(prizes.find(prize => prize.prize_id === Number(selectedPrize))?.quantity || 1, 10)} // 確保類型一致
+          onChange={(e) => {
+            const maxQuantity = Math.min(prizes.find(prize => prize.prize_id === Number(selectedPrize))?.quantity || 1, 10);
+            const value = Math.min(Math.max(parseInt(e.target.value, 10) || 1, 1), maxQuantity); // 確保值在範圍內
+            setDrawQuantity(value);
+          }}
+        />
+        <button style={buttonStyle} onClick={drawWinner}>🎲 抽取中獎者</button>
       </div>
+  
+      {winnerInfo.length > 0 && (
+        <div style={resultContainerStyle}>
+          <div style={cardStyle}>
+            <h3 style={titleStyle}>🏆 恭喜中獎！</h3>
+            <div style={winnerGridContainerStyle}>
+              <div style={winnerGridStyle}>
+                {winnerInfo.map((winner, index) => (
+                  <motion.div
+                    key={index}
+                    style={winnerItemStyle}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    {winner.name}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -162,9 +173,53 @@ const titleStyle = {
   textAlign: 'center',
 };
 
-const infoStyle = {
+const fixedSectionStyle = {
+  position: 'relative', // 設置為相對定位，讓子元素的絕對定位以此為基準
+  marginTop: '30px',
+  backgroundColor: '#f0f8ff',
+  padding: '20px',
+  borderRadius: '10px',
+  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+  textAlign: 'center',
+  width: '80%',
+};
+
+const winnerGridContainerStyle = {
+  maxHeight: '300px', // 限制高度，避免覆蓋 Header
+  overflowY: 'auto', // 啟用垂直滾動條
+  padding: '10px',
+  border: '1px solid #ddd',
+  borderRadius: '8px',
+  backgroundColor: '#f9f9f9',
+};
+
+const winnerGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', // 每列最多 5 個
+  gap: '20px',
+  justifyContent: 'center',
+};
+
+const winnerItemStyle = {
+  padding: '10px',
   fontSize: '18px',
   color: '#333',
+  backgroundColor: '#f8f9fa',
+  border: '1px solid #ddd',
+  borderRadius: '8px',
+  textAlign: 'center',
+  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+};
+
+const resultContainerStyle = {
+  position: 'absolute', // 設置為絕對定位
+  top: '65%', // 放置在父容器的正下方
+  left: '50%',
+  transform: 'translateX(-50%)', // 水平居中
+  marginTop: '10px', // 與抽獎按鈕保持距離
+  display: 'flex',
+  justifyContent: 'center',
+  width: '100%',
 };
 
 export default DrawSection;

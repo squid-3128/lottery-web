@@ -16,7 +16,7 @@ const admin = { username: 'admin', password: 'admin123' };
 // 管理端登入 API
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === admin.username && password === admin.password || 1) {
+  if (username === admin.username && password === admin.password) {
     const token = jwt.sign({ role: 'admin' }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token });
   } else {
