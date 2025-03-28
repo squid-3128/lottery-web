@@ -9,6 +9,7 @@ function PrizesSection() {
   const [prizeQuantity, setPrizeQuantity] = useState(''); // 新增數量欄位
   const [prizeLevel, setPrizeLevel] = useState('');
   const [editId, setEditId] = useState(null);
+  const [prizeImage, setPrizeImage] = useState(''); // 新增圖片路徑狀態
   const [editedData, setEditedData] = useState({
     prize_name: '',
     prize_description: '',
@@ -29,8 +30,8 @@ function PrizesSection() {
 
   // 新增獎項
   const addPrize = async () => {
-    if (!prizeName || !prizeDescription || !prizeLevel || !prizeQuantity) {
-      alert('請填寫所有欄位！');
+    if (!prizeName || !prizeDescription || !prizeLevel || !prizeQuantity || !prizeImage) {
+      alert('請填寫所有欄位並上傳圖片！');
       return;
     }
   
@@ -38,7 +39,8 @@ function PrizesSection() {
       name: prizeName,
       description: prizeDescription,
       level: prizeLevel,
-      quantity: prizeQuantity, // 新增數量
+      quantity: prizeQuantity,
+      image: prizeImage, // 傳送圖片路徑
     };
   
     try {
@@ -49,7 +51,8 @@ function PrizesSection() {
         setPrizeName('');
         setPrizeDescription('');
         setPrizeLevel('');
-        setPrizeQuantity(''); // 清空數量欄位
+        setPrizeQuantity('');
+        setPrizeImage(''); // 清空圖片路徑
       } else {
         alert('新增失敗，請稍後再試。');
       }
@@ -136,6 +139,29 @@ function PrizesSection() {
           onChange={(e) => setPrizeLevel(e.target.value)}
           className={styles.input}
         />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const formData = new FormData();
+              formData.append('prize_img', file);
+
+              try {
+                const response = await axios.post('http://localhost:3001/database/upload-prize-image', formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                setPrizeImage(response.data.imagePath); // 儲存圖片路徑
+                alert('圖片上傳成功！');
+              } catch (error) {
+                console.error('圖片上傳失敗：', error);
+                alert('圖片上傳失敗，請稍後再試。');
+              }
+            }
+          }}
+          className={styles.input}
+        />
         <button onClick={addPrize} className={styles.button}>➕ 新增獎項</button>
       </div>
 
@@ -148,6 +174,7 @@ function PrizesSection() {
             <th className={styles.th}>描述</th>
             <th className={styles.th}>數量</th> 
             <th className={styles.th}>等級</th>
+            <th className={styles.th}>圖片</th>
             <th className={styles.th}>操作</th>
           </tr>
         </thead>
@@ -210,6 +237,11 @@ function PrizesSection() {
                 ) : (
                   prize.prize_level
                 )}
+              </td>
+
+              {/* 圖片欄位 */}
+              <td className={styles.td}>
+                <img src={`http://localhost:3001${prize.prize_img}`} alt="獎項圖片" style={{ width: '50px', height: '50px' }} />
               </td>
 
               {/* 操作按鈕 */}

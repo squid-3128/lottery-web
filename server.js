@@ -10,6 +10,7 @@ const cors = require('cors');
 const { router: authRoutes } = require('./routes/auth');
 const databaseRoutes = require('./routes/database');
 const adminRoutes = require('./routes/admin');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,8 @@ app.get('/user/data', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/database', databaseRoutes);
 app.use('/admin', adminRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // 處理未匹配的路由
 app.use((req, res) => {

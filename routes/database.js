@@ -1,7 +1,8 @@
 const express = require('express');
 const mysql = require('mysql2');
 const ExcelJS = require('exceljs'); // 引入 exceljs
-
+const multer = require('multer');
+const path = require('path');
 const router = express.Router();
 
 //之後需要移除
@@ -226,7 +227,7 @@ router.put('/updateparticipant', (req, res) => {
 
 //檢視所有獎項
 router.get('/allprizes', (req, res) => {
-  const query = 'SELECT * FROM prize';
+  const query = 'SELECT * FROM draw.prize';
   db.query(query, (err, results) => {
     if (err) {
       res.status(500).send(err);
@@ -238,15 +239,18 @@ router.get('/allprizes', (req, res) => {
 
 // 新增獎項
 router.post('/addprizes', (req, res) => {
-  const { name, description, level, quantity } = req.body;
+  const { name, description, level, quantity, image } = req.body; // 新增 image
 
-  if (!name || !description || !level || !quantity) {
+  if (!name || !description || !level || !quantity || !image) {
     return res.status(400).send('所有欄位都是必填的');
   }
 
-  const query = 'INSERT INTO draw.prize (prize_name, prize_description, prize_level, quantity) VALUES (?, ?, ?, ?)';
+  const query = `
+    INSERT INTO draw.prize (prize_name, prize_description, prize_level, quantity, prize_img)
+    VALUES (?, ?, ?, ?, ?)
+  `;
 
-  db.query(query, [name, description, level, quantity], (err, result) => {
+  db.query(query, [name, description, level, quantity, image], (err, result) => {
     if (err) {
       console.error('Error adding prize:', err);
       return res.status(500).send('新增失敗');
@@ -346,6 +350,29 @@ router.get('/draw', (req, res) => {
       res.json(results);
     }
   });
+});
+
+// 設定 multer 儲存位置和檔名
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../uploads')); // 圖片存放路徑
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname)); // 確保檔名唯一
+  },
+});
+
+const upload = multer({ storage });
+
+// 圖片上傳 API
+router.post('/upload-prize-image', upload.single('prize_img'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('未上傳圖片');
+  }
+
+  const imagePath = `/uploads/${req.file.filename}`; // 儲存相對路徑
+  res.json({ imagePath });
 });
 
 // 記錄抽獎資訊
