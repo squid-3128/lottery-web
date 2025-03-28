@@ -112,7 +112,7 @@ router.delete('/delparticipants', (req, res) => {
 
 //  修改參與者
 router.put('/updateparticipant', (req, res) => {
-  const { id, name, email, phone_number } = req.body;
+  const { id, name, email, phone_number, status} = req.body;
   
   if (!id) {
     return res.status(400).send('Participant ID is required.');
@@ -120,10 +120,10 @@ router.put('/updateparticipant', (req, res) => {
 
   const query = `
     UPDATE draw.participants
-    SET name = ?, phone_number = ?, email = ?
+    SET name = ?, phone_number = ?, email = ?, status = ?
     WHERE id = ?
   `;
-  db.query(query, [name, phone_number, email, id], (err, result) => {
+  db.query(query, [name, phone_number, email, status, id], (err, result) => {
     if (err) {
       console.error('Error updating participant:', err);
       return res.status(500).send('Error updating participant.');
@@ -551,16 +551,67 @@ router.delete('/delactivitie', (req, res) => {
 // });
 
 
-//簡易抽獎
+// 簡易抽獎
 router.get('/random-winner', (req, res) => {
   const quantity = parseInt(req.query.quantity, 10) || 1;
-  const query = `SELECT * FROM draw.participants ORDER BY RAND() LIMIT ${quantity};`;
+  const allowRepeatWin = req.query.allowRepeatWin == 'true'; // 接收前端的參數
+
+  // 根據 allowRepeatWin 決定查詢條件
+  const statusCondition = allowRepeatWin ? "WHERE status IN ('valid', 'won')" : "WHERE status = 'valid'";
+  const query = `SELECT * FROM draw.participants ${statusCondition} ORDER BY RAND() LIMIT ${quantity};`;
+
   db.query(query, (err, results) => {
     if (err) {
       res.status(500).send(err);
     } else {
       res.json(results);
     }
+  });
+});
+
+// 更新參與者的 status
+router.put('/update-participant-status', (req, res) => {
+  const { id, status } = req.body;
+
+  if (!id || !status) {
+    return res.status(400).send('參與者 ID 和狀態是必填的');
+  }
+
+  const query = `
+    UPDATE draw.participants
+    SET status = ?
+    WHERE id = ?
+  `;
+
+  db.query(query, [status, id], (err, result) => {
+    if (err) {
+      console.error('Error updating participant status:', err);
+      return res.status(500).send('更新參與者狀態失敗');
+    }
+    res.send('參與者狀態更新成功');
+  });
+});
+
+// 更新 draw 表格的 status
+router.put('/update-draw-result', (req, res) => {
+  const { participants_id, prize_id, result } = req.body;
+
+  if (!participants_id || !prize_id || !result) {
+    return res.status(400).send('參與者 ID、獎品 ID 和狀態是必填的');
+  }
+
+  const query = `
+    UPDATE draw.draw
+    SET result = ?
+    WHERE participants_id = ? AND prize_id = ?
+  `;
+
+  db.query(query, [result, participants_id, prize_id], (err, result) => {
+    if (err) {
+      console.error('Error updating draw result:', err);
+      return res.status(500).send('更新抽獎狀態失敗');
+    }
+    res.send('抽獎狀態更新成功');
   });
 });
 

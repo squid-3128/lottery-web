@@ -124,6 +124,36 @@ function ParticipantsSection() {
     setEditedData({ ...editedData, [field]: e.target.value });
   };
 
+  const translateStatus = (status) => {
+    switch (status) {
+      case 'pending':
+        return '驗證中';
+      case 'valid':
+        return '有效';
+      case 'canceled':
+        return '已取消';
+      case 'won':
+        return '獲獎';
+      default:
+        return status;
+    }
+  };  
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'pending':
+        return { color: 'gold' };     // 黃色
+      case 'valid':
+        return { color: 'green' };    // 綠色
+      case 'canceled':
+        return { color: 'red' };      // 紅色
+      case 'won':
+        return { color: 'blue' };     // 藍色
+      default:
+        return {};
+    }
+  };
+
   return (
     <div style={containerStyle}>
       {/* <h2 style={titleStyle}>管理參與者</h2> */}
@@ -197,6 +227,7 @@ function ParticipantsSection() {
             <th style={thStyle}>姓名</th>
             <th style={thStyle}>Email</th>
             <th style={thStyle}>電話</th>
+            <th style={thStyle}>狀態</th>
             <th style={thStyle}>操作</th>
           </tr>
         </thead>
@@ -242,6 +273,20 @@ function ParticipantsSection() {
               </td>
               <td style={tdStyle}>
                 {editId === participant.id ? (
+                  <input
+                    type="text"
+                    value={editedData.status}
+                    onChange={(e) => handleChange(e, 'status')}
+                    style={inputStyle}
+                  />
+                ) : (
+                  <span style={getStatusStyle(participant.status)}>
+                    {translateStatus(participant.status)}
+                  </span>
+                )}
+              </td>
+              <td style={tdStyle}>
+                {editId === participant.id ? (
                   <>
                     <button onClick={() => handleSave(participant.id)} style={saveButtonStyle}>💾 保存</button>
                     <button onClick={() => setEditId(null)} style={cancelButtonStyle}>❌ 取消</button>
@@ -278,10 +323,10 @@ const containerStyle = {
   minHeight: '100vh',
 };
 
-const titleStyle = {
-  color: '#007bff',
-  marginBottom: '20px',
-};
+// const titleStyle = {
+//   color: '#007bff',
+//   marginBottom: '20px',
+// };
 
 const formStyle = {
   display: 'flex',

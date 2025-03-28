@@ -1,3 +1,5 @@
 /node_modules
 lottery-frontend/node_modules/
+lottery-frontend/node_modules/.cache/
+lottery-frontend/node_modules/.cache/.eslintcache
 .env

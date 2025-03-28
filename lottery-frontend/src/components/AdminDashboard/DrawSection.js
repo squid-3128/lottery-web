@@ -7,6 +7,7 @@ function DrawSection() {
   const [prizes, setPrizes] = useState([]);
   const [selectedPrize, setSelectedPrize] = useState(null);
   const [drawQuantity, setDrawQuantity] = useState(1);
+  const [allowRepeatWin, setAllowRepeatWin] = useState(false); // 新增狀態
 
   useEffect(() => {
     const fetchPrizes = async () => {
@@ -29,19 +30,28 @@ function DrawSection() {
 
   const drawWinner = async () => {
     try {
-      const response = await axios.get(`http://localhost:3001/database/random-winner?quantity=${drawQuantity}`);
+      const response = await axios.get(
+        `http://localhost:3001/database/random-winner?quantity=${drawQuantity}&allowRepeatWin=${allowRepeatWin}`
+      );
       const winners = response.data;
       setWinnerInfo(winners);
   
       // 修正 draw_time 的格式
       const drawTime = new Date().toISOString().slice(0, 19).replace("T", " ");
   
-      // 記錄中獎資訊
+      // 更改資料表
       for (const winner of winners) {
+        // 更新中獎紀錄
         await axios.post("http://localhost:3001/database/record-draw", {
           draw_time: drawTime,
           participants_id: winner.id,
           prize_id: selectedPrize,
+          result: "confirmed",
+        });
+        // 更新中獎者的 status 為 "won"
+        await axios.put("http://localhost:3001/database/update-participant-status", {
+          id: winner.id,
+          status: "won",
         });
       }
   
@@ -66,6 +76,28 @@ function DrawSection() {
 
   const exportDrawData = () => {
     window.open('http://localhost:3001/database/export-draw', '_blank');
+  };
+
+  const redrawWinner = async () => {
+    try {
+      for (const winner of winnerInfo) {
+        // 更新 draw 表格的 status 為 "rejected"
+        await axios.put("http://localhost:3001/database/update-draw-result", {
+          participants_id: winner.id,
+          prize_id: selectedPrize,
+          result: "rejected",
+        });
+        // 更新中獎者的 status 為 "rejected"
+        await axios.put("http://localhost:3001/database/update-participant-status", {
+          id: winner.id,
+          status: "valid",
+        });
+      }
+      alert("已重抽！");
+      setWinnerInfo([]); // 清空中獎者資訊
+    } catch (error) {
+      console.error("Error redrawing winner:", error);
+    }
   };
   
   return (
@@ -98,6 +130,38 @@ function DrawSection() {
             setDrawQuantity(value);
           }}
         />
+        <div style={{ margin: "20px 0" }}>
+          <label style={but_switch}>
+            {/* 隱藏原始 checkbox */}
+            <input
+              type="checkbox"
+              checked={allowRepeatWin}
+              onChange={(e) => setAllowRepeatWin(e.target.checked)}
+              style={{ display: "none" }} // 隱藏原始 checkbox
+            />
+            {/* 自定義開關樣式 */}
+            <span
+              style={{
+                ...slider,
+                backgroundColor: allowRepeatWin ? "#4caf50" : "#ccc", // 根據狀態改變背景色
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  height: "16px",
+                  width: "16px",
+                  left: allowRepeatWin ? "22px" : "2px", // 根據狀態改變滑塊位置
+                  bottom: "2px",
+                  backgroundColor: "white",
+                  borderRadius: "50%",
+                  transition: "0.4s",
+                }}
+              ></span>
+            </span>
+            <span style={labelText}>{allowRepeatWin ? "允許重複中獎" : "禁止重複中獎"}</span>
+          </label>
+        </div>
         <button style={buttonStyle} onClick={drawWinner}>🎲 抽取中獎者</button>
       </div>
   
@@ -120,6 +184,10 @@ function DrawSection() {
                 ))}
               </div>
             </div>
+            {/* 新增確認與重抽按鈕 */}
+            <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-around" }}>
+              <button style={buttonStyle} onClick={redrawWinner}>🔄 重抽</button>
+            </div>
           </div>
         </div>
       )}
@@ -136,7 +204,7 @@ const containerStyle = {
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  height: '50vh',
+  height: '70vh',
   textAlign: 'center',
   backgroundColor: '#f0f8ff',
   padding: '20px',
@@ -238,13 +306,35 @@ const winnerItemStyle = {
 
 const resultContainerStyle = {
   position: 'absolute', // 設置為絕對定位
-  top: '50%', // 放置在父容器的正下方
+  top: '70%', // 放置在父容器的正下方
   left: '50%',
   transform: 'translateX(-50%)', // 水平居中
   marginTop: '10px', // 與抽獎按鈕保持距離
   display: 'flex',
   justifyContent: 'center',
   width: '100%',
+};
+
+const but_switch = {
+  display: "inline-flex",
+  alignItems: "center",
+  cursor: "pointer",
+  gap: "10px",
+  margin: "10px 0",
+};
+
+const slider = {
+  position: "relative",
+  width: "40px",
+  height: "20px",
+  backgroundColor: "#ccc",
+  borderRadius: "34px",
+  transition: "0.4s",
+};
+
+const labelText = {
+  fontSize: "16px",
+  color: "#333",
 };
 
 export default DrawSection;
