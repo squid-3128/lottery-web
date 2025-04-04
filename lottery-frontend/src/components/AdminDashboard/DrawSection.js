@@ -1,40 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import Swal from 'sweetalert2';
 
-function DrawSection() {
+function DrawSection({ room }) {
   const [winnerInfo, setWinnerInfo] = useState([]);
   const [prizes, setPrizes] = useState([]);
-  const [selectedPrize, setSelectedPrize] = useState(null);
+  const [selectedPrize, setSelectedPrize] = useState(null); //用id紀錄
   const [drawQuantity, setDrawQuantity] = useState(1);
-  const [allowRepeatWin, setAllowRepeatWin] = useState(false); // 新增狀態
+  const [allowRepeatWin, setAllowRepeatWin] = useState(false);
+  const fetchCalledRef = useRef(false);
+  const targetRef = useRef(null); // 用於中獎結果的滾動
+  const topRef = useRef(null); // 用於【🎁 抽獎活動】的滾動
+  const API_BASE = process.env.REACT_APP_API_BASE;
 
   useEffect(() => {
     const fetchPrizes = async () => {
+      if (fetchCalledRef.current) return;
+      fetchCalledRef.current = true;
+  
       try {
-        const response = await axios.get("http://localhost:3001/database/allprizes");
+        const response = await axios.get(`${API_BASE}/database/allprizes?room=${room}`);
         const prizes = response.data;
         setPrizes(prizes);
-
-        // 設置預設值為 quantity 最大的獎項
+  
         const defaultPrize = prizes.reduce((max, prize) => prize.quantity > max.quantity ? prize : max, prizes[0]);
         setSelectedPrize(defaultPrize.prize_id);
-        setDrawQuantity(1); // 預設抽獎數量為 1
+        setDrawQuantity(1);
       } catch (error) {
-        console.error("Error fetching prizes:", error);
+        Swal.fire('錯誤', '伺服器異常', 'error');
       }
     };
-
+  
     fetchPrizes();
-  }, []);
+  }, [API_BASE, room]); // 將 room 加入依賴陣列
 
   const drawWinner = async () => {
     try {
+      // 更新獎品數量
+      await axios.put(`${API_BASE}/database/update-prize-quantity`, {
+        prize_id: selectedPrize,
+        quantity: drawQuantity,
+      });
+    } catch (error) {
+      if (
+        error.response.data === '缺少獎品'
+      ){
+        Swal.fire('錯誤', '尚未新增獎品', 'error');
+      } else {
+        Swal.fire('錯誤', '獎品數量不足', 'error');
+      }
+      return;
+    }
+    try {
       const response = await axios.get(
-        `http://localhost:3001/database/random-winner?quantity=${drawQuantity}&allowRepeatWin=${allowRepeatWin}`
+        `${API_BASE}/database/random-winner?quantity=${drawQuantity}&allowRepeatWin=${allowRepeatWin}&room=${room}`
       );
       const winners = response.data;
       setWinnerInfo(winners);
+      setTimeout(() => {
+        if (targetRef.current) {
+          const y = targetRef.current.getBoundingClientRect().top + window.pageYOffset - 100;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 100);
   
       // 修正 draw_time 的格式
       const drawTime = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -42,24 +71,19 @@ function DrawSection() {
       // 更改資料表
       for (const winner of winners) {
         // 更新中獎紀錄
-        await axios.post("http://localhost:3001/database/record-draw", {
+        await axios.post(`${API_BASE}/database/record-draw`, {
           draw_time: drawTime,
           participants_id: winner.id,
           prize_id: selectedPrize,
           result: "confirmed",
+          room_code: room,
         });
         // 更新中獎者的 status 為 "won"
-        await axios.put("http://localhost:3001/database/update-participant-status", {
+        await axios.put(`${API_BASE}/database/update-participant-status`, {
           id: winner.id,
           status: "won",
         });
       }
-  
-      // 更新獎品數量
-      await axios.put("http://localhost:3001/database/update-prize-quantity", {
-        prize_id: selectedPrize,
-        quantity: drawQuantity,
-      });
   
       // 更新前端的獎品數量
       setPrizes((prevPrizes) =>
@@ -70,38 +94,66 @@ function DrawSection() {
         )
       );
     } catch (error) {
-      console.error("Error during draw:", error);
+      if (
+        error.response &&
+        error.response.status === 400 &&
+        error.response.data?.error?.includes("抽獎人數不足")
+      ) {
+        Swal.fire('錯誤', '抽獎人數不足', 'error');
+      } else {
+        Swal.fire('錯誤', '伺服器異常', 'error');
+      }
     }
   };
 
   const exportDrawData = () => {
-    window.open('http://localhost:3001/database/export-draw', '_blank');
+    window.open(`${API_BASE}/database/export-draw?room=${room}`, '_blank');
   };
 
   const redrawWinner = async () => {
     try {
       for (const winner of winnerInfo) {
         // 更新 draw 表格的 status 為 "rejected"
-        await axios.put("http://localhost:3001/database/update-draw-result", {
+        await axios.put(`${API_BASE}/database/update-draw-result`, {
           participants_id: winner.id,
           prize_id: selectedPrize,
           result: "rejected",
         });
-        // 更新中獎者的 status 為 "rejected"
-        await axios.put("http://localhost:3001/database/update-participant-status", {
+        // 更新中獎者的 status 為 "valid"
+        await axios.put(`${API_BASE}/database/update-participant-status`, {
           id: winner.id,
           status: "valid",
         });
+        await axios.put(`${API_BASE}/database/update-prize-quantity`, {
+          prize_id: selectedPrize,
+          quantity: -1,
+        });
       }
-      alert("已重抽！");
+      Swal.fire({
+        icon: 'success',
+        title: '已重抽！',
+        timer: 1000,
+        showConfirmButton: false,
+      });
       setWinnerInfo([]); // 清空中獎者資訊
+      // 更新前端的獎品數量
+      setPrizes((prevPrizes) =>
+        prevPrizes.map((prize) =>
+          prize.prize_id === selectedPrize
+            ? { ...prize, quantity: prize.quantity + drawQuantity }
+            : prize
+        )
+      );
+      // 平滑滾動到【🎁 抽獎活動】區域
+      topRef.current?.scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
-      console.error("Error redrawing winner:", error);
+      Swal.fire('錯誤', '伺服器異常', 'error');
     }
   };
   
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} ref={topRef}>
+      {/* 🎁 抽獎活動區域 */}
       <div style={fixedSectionStyle}>
         <h2 style={headerStyle}>🎁 抽獎活動</h2>
         <select
@@ -118,18 +170,22 @@ function DrawSection() {
             </option>
           ))}
         </select>
-        <input
-          type="number"
-          style={inputStyle}
-          value={drawQuantity}
-          min="1"
-          max={Math.min(prizes.find(prize => prize.prize_id === Number(selectedPrize))?.quantity || 1, 10)} // 確保類型一致
-          onChange={(e) => {
-            const maxQuantity = Math.min(prizes.find(prize => prize.prize_id === Number(selectedPrize))?.quantity || 1, 10);
-            const value = Math.min(Math.max(parseInt(e.target.value, 10) || 1, 1), maxQuantity); // 確保值在範圍內
-            setDrawQuantity(value);
-          }}
-        />
+
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px' }}>
+          <span style={{ marginRight: '8px' }}>抽取數量：</span>
+          <input
+            type="number"
+            style={inputStyle}
+            value={drawQuantity}
+            min="1"
+            max={Math.min(prizes.find(prize => prize.prize_id === Number(selectedPrize))?.quantity || 1, 10)}
+            onChange={(e) => {
+              const maxQuantity = Math.min(prizes.find(prize => prize.prize_id === Number(selectedPrize))?.quantity || 1, 10);
+              const value = Math.min(Math.max(parseInt(e.target.value, 10) || 1, 1), maxQuantity);
+              setDrawQuantity(value);
+            }}
+          />
+        </div>
         <div style={{ margin: "20px 0" }}>
           <label style={but_switch}>
             {/* 隱藏原始 checkbox */}
@@ -166,7 +222,7 @@ function DrawSection() {
       </div>
   
       {winnerInfo.length > 0 && (
-        <div style={resultContainerStyle}>
+        <div style={resultContainerStyle} ref={targetRef}>
           <div style={cardStyle}>
             <h3 style={titleStyle}>🏆 恭喜中獎！</h3>
             <div style={winnerGridContainerStyle}>
@@ -193,7 +249,7 @@ function DrawSection() {
       )}
   
       {/* 匯出按鈕 */}
-      <button style={buttonStyle} onClick={exportDrawData}>📤 匯出中獎資訊</button>
+      <button style={Exportbutton} onClick={exportDrawData}>📤 匯出中獎資訊</button>
     </div>
   );
 }
@@ -204,11 +260,12 @@ const containerStyle = {
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  height: '70vh',
+  paddingTop: '80px', // 預留空間給 Header
+  padding: '20px',
   textAlign: 'center',
   backgroundColor: '#f0f8ff',
-  padding: '20px',
   borderRadius: '10px',
+  boxSizing: 'border-box',
 };
 
 const headerStyle = {
@@ -220,37 +277,56 @@ const headerStyle = {
 
 const selectStyle = {
   padding: '10px',
-  fontSize: '18px',
-  marginBottom: '20px',
+  fontSize: '16px',
+  margin: '10px 0',
   borderRadius: '8px',
   border: '1px solid #007bff',
+  width: '100%', // 選擇框在手機上全寬
+  maxWidth: '300px',
 };
 
 const inputStyle = {
   padding: '10px',
-  margin: '0 10px',
-  fontSize: '18px',
-  marginBottom: '20px',
+  margin: '10px 0',
+  fontSize: '16px',
   borderRadius: '8px',
   border: '1px solid #007bff',
-  width: '80px',
+  width: '20%', // 輸入框在手機上全寬
+  maxWidth: '300px',
 };
 
 const buttonStyle = {
   padding: '12px 24px',
-  margin: '20px',
-  fontSize: '20px',
+  margin: '10px 0',
+  fontSize: '18px',
   color: '#fff',
   backgroundColor: '#007bff',
   border: 'none',
   borderRadius: '8px',
   cursor: 'pointer',
   transition: 'all 0.3s ease',
+  width: '100%', // 按鈕在手機上全寬
+  maxWidth: '300px',
+};
+
+const Exportbutton = {
+  padding: '12px 24px',
+  margin: '30px 0',
+  fontSize: '18px',
+  color: '#fff',
+  backgroundColor: '#007bff',
+  border: 'none',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  width: '100%', // 按鈕在手機上全寬
+  maxWidth: '300px',
 };
 
 const cardStyle = {
   marginTop: '30px',
   padding: '30px',
+  paddingTop: '0px',
   width: '450px',
   backgroundColor: '#ffffff',
   boxShadow: '0 0 20px rgba(0, 123, 255, 0.4)',
@@ -267,14 +343,17 @@ const titleStyle = {
 };
 
 const fixedSectionStyle = {
-  position: 'relative', // 設置為相對定位，讓子元素的絕對定位以此為基準
-  marginTop: '5px', // 縮小與 Header 的距離
-  backgroundColor: '#f0f8ff',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  backgroundColor: '#ffffff',
+  marginTop: '100px',
   padding: '20px',
   borderRadius: '10px',
   boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-  textAlign: 'center',
-  width: '80%',
+  width: '100%',
+  maxWidth: '600px',
+  boxSizing: 'border-box',
 };
 
 const winnerGridContainerStyle = {
@@ -288,14 +367,15 @@ const winnerGridContainerStyle = {
 
 const winnerGridStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', // 每列最多 5 個
-  gap: '20px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', // 自適應列數
+  gap: '10px',
   justifyContent: 'center',
+  width: '100%',
 };
 
 const winnerItemStyle = {
   padding: '10px',
-  fontSize: '18px',
+  fontSize: '16px',
   color: '#333',
   backgroundColor: '#f8f9fa',
   border: '1px solid #ddd',
@@ -305,14 +385,13 @@ const winnerItemStyle = {
 };
 
 const resultContainerStyle = {
-  position: 'absolute', // 設置為絕對定位
-  top: '70%', // 放置在父容器的正下方
-  left: '50%',
-  transform: 'translateX(-50%)', // 水平居中
-  marginTop: '10px', // 與抽獎按鈕保持距離
+  marginTop: '40px',
   display: 'flex',
-  justifyContent: 'center',
+  flexDirection: 'column',
+  alignItems: 'center',
   width: '100%',
+  maxWidth: '600px',
+  boxSizing: 'border-box',
 };
 
 const but_switch = {
@@ -336,5 +415,29 @@ const labelText = {
   fontSize: "16px",
   color: "#333",
 };
+
+// 新增響應式設計
+const responsiveStyle = `
+  @media (max-width: 768px) {
+    ${containerStyle} {
+      padding: 10px;
+    }
+    ${fixedSectionStyle} {
+      width: 100%;
+      padding: 10px;
+    }
+    ${buttonStyle}, ${inputStyle}, ${selectStyle} {
+      max-width: 100%;
+    }
+    ${winnerGridStyle} {
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+  }
+`;
+
+// 在頁面中插入響應式樣式
+const styleElement = document.createElement('style');
+styleElement.textContent = responsiveStyle;
+document.head.appendChild(styleElement);
 
 export default DrawSection;

@@ -1,21 +1,37 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+// import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 function UserPage() {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const room = queryParams.get("room");
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone_number: '',
+    room_code: room,
   });
-
   const [isSubmitted, setIsSubmitted] = useState(false); // 狀態控制顯示內容
+  const API_BASE = process.env.REACT_APP_API_BASE;
+
+  //TODO:尚未處理GET內容
+  // useEffect(() => {
+  //   if (room) {
+  //     axios.get(`${API_BASE}/result?room=${encodeURIComponent(room)}`)
+  //       .then((res) => setData(res.data))
+  //       .catch((err) => console.error(err));
+  //   }
+  // }, [room]);
 
   useEffect(() => {
-    // 檢查是否已提交過表單
-    if (localStorage.getItem('hasSubmitted')) {
+    // 檢查是否已提交過當前的 roomCode
+    const submittedRooms = JSON.parse(localStorage.getItem('submittedRooms')) || [];
+    if (submittedRooms.includes(room)) {
       setIsSubmitted(true);
     }
-  }, []);
+  }, [room]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,32 +44,37 @@ function UserPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const phonePattern = /^[0-9]{10}$/;
-
+  
     if (!phonePattern.test(formData.phone_number)) {
       alert('請輸入有效的手機號碼（10位數字）。');
       return;
     }
-
-    if (localStorage.getItem('hasSubmitted')) {
-      alert('您已經提交過表單，無法再次參加。');
+  
+    // 檢查是否已提交過當前的 roomCode
+    const submittedRooms = JSON.parse(localStorage.getItem('submittedRooms')) || [];
+    if (submittedRooms.includes(room)) {
+      alert('您已經提交過此房間的表單，無法再次參加。');
       return;
     }
-
+  
     try {
-      const response = await fetch('http://localhost:3001/database/addparticipants', {
+      const response = await fetch(`${API_BASE}/database/addparticipants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
-
+  
       if (response.ok) {
         const result = await response.json();
         alert('表單提交成功！');
         setIsSubmitted(true); // 設置為已提交
         console.log('提交的數據：', result);
-        localStorage.setItem('hasSubmitted', 'true'); // 標記為已提交
+  
+        // 更新 localStorage，記錄已提交的 roomCode
+        submittedRooms.push(room);
+        localStorage.setItem('submittedRooms', JSON.stringify(submittedRooms));
       } else {
         alert('提交失敗，請稍後再試。');
         console.error('提交失敗：', response.statusText);
@@ -121,7 +142,7 @@ function UserPage() {
         </div>
       )}
       <footer style={styles.footer}>
-        <Link to="/admin/login" style={styles.link}>Admin Login</Link>
+        <Link to="login" style={styles.link}>Admin Login</Link>
       </footer>
     </div>
   );
@@ -173,7 +194,7 @@ const styles = {
     fontWeight: 'bold',
   },
   input: {
-    width: '100%',
+    width: '93%',
     padding: '10px',
     marginBottom: '15px',
     border: '1px solid #ccc',

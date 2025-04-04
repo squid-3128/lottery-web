@@ -1,0 +1,235 @@
+/* 主容器 */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  padding-top: 80px; /* 預留空間給 Header */
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 表單 */
+.form {
+  display: flex;
+  flex-wrap: wrap; /* 支援換行 */
+  gap: 10px;
+  margin-bottom: 30px;
+  justify-content: center; /* 居中對齊 */
+}
+
+/* 輸入框 */
+.input {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 200px;
+  box-sizing: border-box;
+}
+
+.add_input {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 200px;
+  box-sizing: border-box;
+}
+
+/* 按鈕 */
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+/* 表格容器，固定大小 */
+.tableContainer {
+  width: 100%;
+  max-width: 1200px;
+  overflow-x: auto; /* 水平滾動 */
+  overflow-y: auto; /* 垂直滾動 */
+  max-height: 800px; /* 限制表格高度 */
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格 */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* 表格標題 */
+.th {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* 表格資料 */
+.td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+  font-size: 18px;
+  word-break: break-word; /* 防止文字溢出 */
+  max-width: 150px; /* 限制單元格最大寬度 */
+  overflow: hidden; /* 隱藏超出內容 */
+  text-overflow: ellipsis; /* 添加省略號 */
+  white-space: nowrap; /* 禁止換行 */
+}
+
+/* 描述欄位允許多行顯示 */
+.tdDescription {
+  white-space: normal; /* 允許換行 */
+  word-wrap: break-word; /* 強制長字換行 */
+  word-break: break-word; /* 支援長單字換行 */
+  max-height: 60px; /* 限制單元格最大高度 */
+  overflow-y: auto; /* 垂直滾動條 */
+  overflow-x: hidden; /* 禁止水平滾動條 */
+  text-overflow: ellipsis; /* 添加省略號 */
+  padding: 5px; /* 增加內邊距 */
+  line-height: 1.5; /* 調整行高，讓文字更易讀 */
+}
+
+/* 編輯模式的 input */
+.input {
+  padding: 5px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 100%; /* 讓 input 填滿單元格 */
+  max-width: 120px; /* 限制 input 的最大寬度 */
+  box-sizing: border-box; /* 包含內邊距與邊框 */
+}
+
+/* 圖片樣式 */
+.imgClickable {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.imgClickable:hover {
+  transform: scale(1.1); /* 滑鼠懸停時放大 */
+}
+
+/* 編輯按鈕 */
+.editButton {
+  padding: 5px 10px;
+  margin-right: 5px;
+  background-color: #ffc107;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.editButton:hover {
+  background-color: #e0a800;
+}
+
+/* 刪除按鈕 */
+.deleteButton {
+  padding: 5px 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.deleteButton:hover {
+  background-color: #c82333;
+}
+
+/* 保存按鈕 */
+.saveButton {
+  padding: 5px 10px;
+  margin-right: 5px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.saveButton:hover {
+  background-color: #218838;
+}
+
+/* 取消按鈕 */
+.cancelButton {
+  padding: 5px 10px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  background-color: #5a6268;
+}
+
+.clearButton {
+  padding: 10px 20px;
+  font-size: 16px;
+  width: 120px;
+  background-color: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .container {
+    padding-top: 100px; /* 增加 padding-top，避免被 Header 遮住 */
+  }
+
+  .tdDescription {
+    max-width: 150px; /* 在小螢幕上進一步縮小最大寬度 */
+  }
+
+  .tableContainer {
+    overflow-x: auto; /* 為表格容器添加水平滾動條 */
+  }
+
+  .form {
+    flex-direction: column; /* 表單垂直排列 */
+    align-items: center;
+  }
+
+  .input {
+    width: 100%; /* 輸入框全寬 */
+    max-width: 300px;
+  }
+
+  .table {
+    font-size: 12px; /* 縮小字體 */
+    overflow-x: auto; /* 水平滾動 */
+  }
+
+  .th, .td {
+    padding: 8px;
+  }
+}

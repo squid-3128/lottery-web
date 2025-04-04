@@ -5,13 +5,14 @@ import './AdminLoginPage.css';
 function AdminLoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const API_BASE = process.env.REACT_APP_API_BASE;
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://localhost:3001/admin/login', { username, password });
+      const res = await axios.post(`${API_BASE}/admin/login`, { username, password });
       const token = res.data.token;
       localStorage.setItem('token', token);
-      window.location.href = '/admin/dashboard';
+      window.location.href = '/admindashboard';
     } catch (err) {
       alert('登入失敗，請檢查用戶名和密碼。');
     }

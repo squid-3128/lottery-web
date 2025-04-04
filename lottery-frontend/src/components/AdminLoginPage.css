@@ -21,17 +21,19 @@
     font-weight: bold;
     text-align: center;
     color: #1f2937;
-    margin-bottom: 24px;
+    margin-bottom: 1vh; /* 增加底部距離 */
   }
   
   .login-form {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    align-items: center; /* 讓寬度一致對齊 */
   }
+
   
   .login-input {
-    width: 100%;
+    max-width: 93%;
     padding: 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;

@@ -1,6 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import { QRCodeCanvas } from 'qrcode.react';
+import { createRoot } from 'react-dom/client';
 
 function Header({ setActiveSection }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // 動態檢測螢幕寬度
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const buttons = [
     { label: '🎉 抽獎開始', section: 'draw' },
     { label: '👥 管理參與者', section: 'participants' },
@@ -8,9 +23,47 @@ function Header({ setActiveSection }) {
     { label: '📋 管理活動', section: 'activities' },
   ];
 
+  const handleQRCodeClick = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room');
+    const baseUrl = window.location.origin;
+    const newUrl = `${baseUrl}/userpage?room=${roomId}`;
+    Swal.fire({
+      title: '分享 QR Code',
+      html: `
+        <div id="qrcode-container"></div>
+        <p>${newUrl}</p>
+        <button id="copy-button" style="margin-top: 10px; padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">複製連結</button>
+      `,
+      showCloseButton: true,
+      showConfirmButton: false,
+      didOpen: () => {
+        const container = document.getElementById('qrcode-container');
+        if (container) {
+          const qrCodeElement = document.createElement('div');
+          container.appendChild(qrCodeElement);
+          const root = createRoot(qrCodeElement);
+          root.render(<QRCodeCanvas value={newUrl} size={300} />);
+        }
+
+        const copyButton = document.getElementById('copy-button');
+        copyButton.addEventListener('click', () => {
+          navigator.clipboard.writeText(newUrl).then(() => {
+            Swal.fire({
+              icon: 'success',
+              title: '已複製到剪貼簿',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          });
+        });
+      },
+    });
+  };
+
   return (
     <div style={headerContainerStyle}>
-      <div style={navWrapperStyle}>
+      <div style={isMobile ? mobileNavWrapperStyle : desktopNavWrapperStyle}>
         {buttons.map((btn, i) => (
           <InteractiveButton
             key={i}
@@ -18,6 +71,7 @@ function Header({ setActiveSection }) {
             onClick={() => setActiveSection(btn.section)}
           />
         ))}
+        <InteractiveButton label="📱 QRcode" onClick={handleQRCodeClick} />
       </div>
     </div>
   );
@@ -65,13 +119,21 @@ const headerContainerStyle = {
   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
 };
 
-// Navigation container
-const navWrapperStyle = {
+// Navigation container styles
+const desktopNavWrapperStyle = {
   display: 'flex',
   justifyContent: 'center',
   padding: '12px 20px',
-  flexWrap: 'wrap',
-  gap: '10px',
+  gap: '15px',
+};
+
+const mobileNavWrapperStyle = {
+  display: 'flex',
+  padding: '12px 20px',
+  gap: '15px',
+  overflowX: 'auto',
+  whiteSpace: 'nowrap',
+  WebkitOverflowScrolling: 'touch',
 };
 
 // Base button style
@@ -80,11 +142,13 @@ const buttonBaseStyle = {
   color: '#007bff',
   border: '2px solid #ffffff',
   borderRadius: '30px',
-  fontSize: '16px',
+  fontSize: '18px',
   fontWeight: 'bold',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
   outline: 'none',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
 };
 
 export default Header;
