@@ -11,12 +11,37 @@ const LoginPage = () => {
   const [adminName, setAdminName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [participantCode, setParticipantCode] = useState('');
+  const [contentClass, setContentClass] = useState('visible'); // 控制內容動畫類別
+  const [cardClass, setCardClass] = useState(''); // 控制卡片縮放動畫類別
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_BASE;
 
+  const handleContentAnimation = (callback) => {
+    setContentClass('fading-out'); // 內容淡出
+    setCardClass('shrinking'); // 卡片縮小
+    setTimeout(() => {
+      callback(); // 執行狀態更新
+      setContentClass('fading-in'); // 內容淡入
+      setCardClass('expanding'); // 卡片放大
+      setTimeout(() => {
+        setContentClass('visible'); // 恢復內容正常狀態
+        setCardClass(''); // 恢復卡片正常狀態
+      }, 250);
+    }, 250);
+  };
+
   const handleBack = () => {
-    setRole(null);
-    setShowCreateRoom(false);
+    handleContentAnimation(() => {
+      setRole(null);
+      setShowCreateRoom(false);
+    });
+  };
+
+  const handleCreateRoomClick = () => {
+    handleContentAnimation(() => {
+      fetchRoomCode();
+      setShowCreateRoom(true);
+    });
   };
 
   const fetchRoomCode = async () => {
@@ -24,21 +49,16 @@ const LoginPage = () => {
       const response = await axios.get(`${API_BASE}/database/room-code`);
       setRoomCode(response.data.roomCode);
     } catch (error) {
-      setRoomCode('取得房間代碼失敗');
+      setRoomCode('取得活動代碼失敗');
     }
-  };
-
-  const handleCreateRoomClick = () => {
-    fetchRoomCode();
-    setShowCreateRoom(true);
   };
 
   const renderInitialButtons = () => (
     <div>
       <div className="login-title">選擇登入方式</div>
       <div className="login-form">
-        <button className="login-button" onClick={() => setRole('participant')}>我是參與者</button>
-        <button className="login-button" onClick={() => setRole('admin')}>我是管理者</button>
+        <button className="login-button" onClick={() => handleContentAnimation(() => setRole('participant'))}>我是參與者</button>
+        <button className="login-button" onClick={() => handleContentAnimation(() => setRole('admin'))}>我是管理者</button>
       </div>
     </div>
   );
@@ -86,7 +106,7 @@ const LoginPage = () => {
   const renderAdminForm = () => {  
     const handleAdminLogin = async () => {
       if (adminRoomCode.trim() === '' || adminPassword.trim() === '') {
-        alert('請輸入房間代碼和密碼');
+        alert('請輸入活動代碼和密碼');
         return;
       }
     
@@ -118,7 +138,7 @@ const LoginPage = () => {
           <input
             type="text"
             className="login-input"
-            placeholder="請輸入房間代碼..."
+            placeholder="請輸入活動代碼..."
             value={adminRoomCode}
             onChange={(e) => setAdminRoomCode(e.target.value)}
           />
@@ -131,7 +151,7 @@ const LoginPage = () => {
           />
           <button className="login-button" onClick={handleAdminLogin}>確認</button>
           <div className="divider-line"></div>
-          <button className="login-button" onClick={handleCreateRoomClick}>創建新房間</button>
+          <button className="login-button" onClick={handleCreateRoomClick}>創建新活動</button>
         </div>
       </div>
     );
@@ -152,11 +172,11 @@ const LoginPage = () => {
         });
   
         if (res.data.roomCode) {
-          alert(`房間建立成功！房間代碼為：${res.data.roomCode}，請保存好這個代碼`);
+          alert(`活動建立成功！活動代碼為：${res.data.roomCode}，請保存好這個代碼`);
           setAdminRoomCode(res.data.roomCode);
           setShowCreateRoom(false); // 返回管理者登入畫面
         } else {
-          alert('房間建立失敗');
+          alert('活動建立失敗');
         }
       } catch (err) {
         alert('伺服器錯誤，請稍後再試');
@@ -166,7 +186,7 @@ const LoginPage = () => {
   
     return (
       <div className="login-title">
-        房間代碼
+        活動代碼
         <div className="login-form">
           <h1>{roomCode}</h1>
           <input
@@ -183,7 +203,7 @@ const LoginPage = () => {
             value={adminPassword}
             onChange={(e) => setAdminPassword(e.target.value)}
           />
-          <button className="login-button" onClick={handleCreateRoom}>確認創建新房間</button>
+          <button className="login-button" onClick={handleCreateRoom}>確認創建新活動</button>
         </div>
       </div>
     );
@@ -191,18 +211,20 @@ const LoginPage = () => {
 
   return (
     <div className="login-container">
-      <div className="login-card">
-        {role !== null && (
-          <button
-            className="back-button"
-            onClick={showCreateRoom ? () => setShowCreateRoom(false) : handleBack}
-          >
-            {"↩ "}回上頁
-          </button>
-        )}
-        {role === null && renderInitialButtons()}
-        {role === 'participant' && renderParticipantForm()}
-        {role === 'admin' && (showCreateRoom ? renderCreateRoomForm() : renderAdminForm())}
+      <div className={`login-card ${cardClass}`}>
+        <div className={`login-content ${contentClass}`}>
+          {role !== null && (
+            <button
+              className="back-button"
+              onClick={showCreateRoom ? () => handleContentAnimation(() => setShowCreateRoom(false)) : handleBack}
+            >
+              {"↩ "}回上頁
+            </button>
+          )}
+          {role === null && renderInitialButtons()}
+          {role === 'participant' && renderParticipantForm()}
+          {role === 'admin' && (showCreateRoom ? renderCreateRoomForm() : renderAdminForm())}
+        </div>
       </div>
     </div>
   );

@@ -48,14 +48,26 @@ function Header({ setActiveSection }) {
 
         const copyButton = document.getElementById('copy-button');
         copyButton.addEventListener('click', () => {
-          navigator.clipboard.writeText(newUrl).then(() => {
+          const textArea = document.createElement('textarea');
+          textArea.value = newUrl;
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
             Swal.fire({
               icon: 'success',
               title: '已複製到剪貼簿',
               timer: 1500,
               showConfirmButton: false,
             });
-          });
+          } catch (err) {
+            Swal.fire({
+              icon: 'error',
+              title: '複製失敗',
+              text: err.message,
+            });
+          }
+          document.body.removeChild(textArea);
         });
       },
     });

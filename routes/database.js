@@ -302,7 +302,7 @@ router.post('/upload-prize-image', upload.single('prize_img'), (req, res) => {
 //檢視活動
 router.get('/allactivity', (req, res) => {
   const roomCode = req.query.room;
-  const query = 'SELECT * FROM draw.activity WHERE room_code = ?';
+  const query = 'SELECT * FROM draw.activity WHERE room_code = ? ORDER BY start_time ASC';
   db.query(query, [roomCode], (err, results) => {
     if (err) {
       res.status(500).send(err);
@@ -449,9 +449,25 @@ router.post('/record-draw', (req, res) => {
 });
 
 //檢視中獎資訊
-router.get('/draw', (req, res) => {
+router.get('/view-draw-results', (req, res) => {
   const roomCode = req.query.room;
-  const query = 'SELECT * FROM draw.draw WHERE room_code = ?';
+
+  if (!roomCode) {
+    return res.status(400).send('缺少 room_code');
+  }
+
+  const query = `
+    SELECT 
+      p.name AS participant_name,
+      z.prize_name,
+      z.prize_level
+    FROM draw.draw d
+    JOIN draw.participants p ON d.participants_id = p.id
+    JOIN draw.prize z ON d.prize_id = z.prize_id
+    WHERE d.room_code = ? AND d.result = "confirmed"
+    ORDER BY z.prize_level ASC, d.draw_time ASC
+  `;
+  
   db.query(query, [roomCode], (err, results) => {
     if (err) {
       res.status(500).send(err);
@@ -591,7 +607,7 @@ router.put('/update-draw-result', (req, res) => {
 
 // 產生隨機 6 位代碼（大寫英數）
 function generateRoomCode(length = 6) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789';
+  const chars = 'ABCDEFGHJKLMNOPQRSTUVWXYZ123456789';
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 

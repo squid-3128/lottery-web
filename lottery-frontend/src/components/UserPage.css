@@ -1,0 +1,275 @@
+/* UserPage.css */
+.body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background: linear-gradient(135deg, #f4a261, #e76f51);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh; /* 確保內容至少佔滿視窗高度 */
+    padding-top: 80px; /* 為 header 留出空間 */
+    padding-bottom: 60px; /* 為 footer 留出空間 */
+    overflow-x: hidden; /* 禁止水平滾動 */
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    background-color: #264653;
+    padding: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.h2 {
+    margin: 0;
+    color: white;
+    font-size: 28px;
+}
+
+.form {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    width: 90%; /* 調整寬度以適應小螢幕 */
+    max-width: 400px; /* 設置最大寬度 */
+    margin-bottom: 40px; /* 與活動列表保持距離 */
+    margin-top: 50px;
+}
+
+.label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: bold;
+}
+
+.input {
+    width: 93%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2a9d8f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.success_message {
+    text-align: center;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 1s ease-in;
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+
+.success_text {
+    color: #2a9d8f;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.success_description {
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* 活動列表樣式 */
+.activity-list {
+    width: 90%; /* 調整寬度以適應小螢幕 */
+    max-width: 800px; /* 設置最大寬度 */
+    margin-bottom: 20px; /* 與 footer 保持距離 */
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.activity-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-list h3 {
+margin-bottom: 15px;
+font-size: 1.5rem;
+color: #333;
+}
+
+.activity-item {
+margin-bottom: 15px;
+padding: 15px;
+border: 2px solid #ddd; /* 預設邊框顏色 */
+border-radius: 8px;
+background-color: #fff;
+transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.activity-item:hover {
+transform: translateY(-5px);
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-item h4 {
+margin: 0 0 10px;
+font-size: 1.2rem;
+color: #007bff;
+}
+
+.activity-item p {
+margin: 5px 0;
+font-size: 1rem;
+color: #555;
+}
+
+/* 獎品列表樣式 */
+.prize-list {
+    width: 90%;
+    max-width: 800px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.prize-list h3 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+/* 移除 li 的黑色圓點 */
+.prize-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* 獎品項目基礎樣式 */
+.prize-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 2px solid #ddd; /* 預設邊框顏色 */
+    border-radius: 8px;
+    background-color: #fff;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prize-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 黃金色框框 */
+.prize-item.gold {
+    border-color: #ffd700; /* 黃金色 */
+    background-color: rgba(255, 215, 0, 0.2); /* 淡黃色背景 */
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.6);
+    color: #b8860b; /* 深金色文字 */
+    font-weight: bold;
+}
+
+/* 銀色框框 */
+.prize-item.silver {
+    border-color: #c0c0c0; /* 銀色 */
+    background-color: rgba(192, 192, 192, 0.318); /* 淡銀色背景 */
+    box-shadow: 0 4px 12px rgba(192, 192, 192, 0.6);
+    color: #808080; /* 深灰色文字 */
+    font-weight: bold;
+}
+
+/* 銅色框框 */
+.prize-item.bronze {
+    border-color: #cd7f32; /* 銅色 */
+    background-color: rgba(205, 127, 50, 0.2); /* 淡銅色背景 */
+    box-shadow: 0 4px 12px rgba(205, 127, 50, 0.6);
+    color: #8b4513; /* 深棕色文字 */
+    font-weight: bold;
+}
+
+/* 獎品圖片樣式 */
+.prize-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.prize-item h4 {
+    margin: 0 0 10px;
+    font-size: 1.2rem;
+    color: inherit; /* 繼承文字顏色 */
+}
+
+.prize-item p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: inherit; /* 繼承文字顏色 */
+}
+
+.winner-list {
+    width: 90%;
+    max-width: 800px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.winner-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+  
+.winner-table th, .winner-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+  
+.winner-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+.link {
+    color: #e76f51;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.footer {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 40px 0;
+    background-color: #264653;
+    color: white;
+    z-index: 1000;
+}

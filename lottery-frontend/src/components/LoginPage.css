@@ -15,7 +15,37 @@
     width: 100%;
     max-width: 400px;
     position: relative;
-  }
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.login-card.shrinking {
+    transform: scale(0.9);
+    opacity: 0;
+}
+
+.login-card.expanding {
+    transform: scale(1.1);
+    opacity: 0;
+}
+
+.login-content {
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+
+.login-content.fading-out {
+  opacity: 0;
+}
+
+.login-content.fading-in {
+  opacity: 0;
+}
+
+.login-content.visible {
+  opacity: 1;
+}
   
   .login-title {
     font-size: 28px;
